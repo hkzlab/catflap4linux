@@ -104,7 +104,7 @@ void CArgs::ProcessSwitch(struct Arg_SwitchAssign *sw) {
 
 	for (int a = lower; a < upper; a++) {
 		char *ArgV = m_ArgV[a];
-		if ((*(ArgV + 0) == '/') || (*(ArgV + 0) == '-')) {
+		if (*(ArgV + 0) == '-') {
 			int b = 0;
 			for (b = 0; b < switchlen; b++) {
 				char s, d;
@@ -146,7 +146,7 @@ void CArgs::ProcessSwitch(char *switchname, void (*Callback)(char *arg), int mod
 
 	for (int a = lower; a < upper; a++) {
 		char *ArgV = m_ArgV[a];
-		if ((*(ArgV + 0) == '/') || (*(ArgV + 0) == '-')) {
+		if (*(ArgV + 0) == '-') {
 			int b = 0;
 			for (b = 0; b < switchlen; b++) {
 				char s, d;
@@ -182,7 +182,7 @@ char *CArgs::GetNormalArg(int num) {
 
 	for (int a = lower; a < upper; a++) {
 		char *ArgV = m_ArgV[a];
-		if ((*(ArgV + 0) != '/') && (*(ArgV + 0) != '-')) {
+		if (*(ArgV + 0) != '-') {
 			if (num == 0) {
 				complete(ArgV);
 			} else {
@@ -235,7 +235,7 @@ int CArgs::GetNormalArgIndex(int num) {
 	else {
 		for (int a = 0; a < m_ArgC; a++) {
 			char *ArgV = m_ArgV[a];
-			if ((*(ArgV + 0) != '/') && (*(ArgV + 0) != '-')) {
+			if (*(ArgV + 0) != '-') {
 				if (num == 0) {
 					return(a);
 				} else {
