@@ -73,6 +73,7 @@ public:
 	int             ReceiveVRAM(char *, int, int, int, int, int);
 	int             ReceiveVRAM(FILE *, int, int, int, int, int);
 	int             ReceiveVRAMtoFile(int, int, int, int, int);
+	int             ReceiveVRAMBMPtoFile(int, int, int, int, int);
 	int             SendVRAM(char *, int, int, int, int, int);
 	int             SendVRAM(FILE *, int, int, int, int, int);
 
