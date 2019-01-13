@@ -32,6 +32,7 @@
 #include    <linux/ppdev.h>
 
 #include    "CCaetla.h"
+#include    "bmpFile.h"
 
 #define     complete(x) { m_ErrorCode=x; return(x); }
 
@@ -2963,9 +2964,6 @@ int CCaetla::UninstallNT(void) {
 // Save VRAM to Filename
 
 int CCaetla::ReceiveVRAM(char *fname, int x, int y, int w, int h, int depth) {
-	//char ext[_MAX_EXT];
-	char ext[1024 * 1024 * 4];
-
 	if (!(m_FILE = fopen(fname, "wb"))) {
 		complete(CAETLA_ERROR_FILE);
 	}
@@ -2981,13 +2979,18 @@ int CCaetla::ReceiveVRAM(char *fname, int x, int y, int w, int h, int depth) {
 	if (x + w > 1024)  w = 1024 - x;
 	if (y + h > 512)   h = 512 - y;
 
+	// Get file extension
+	const char* ext;
+	char* dot = strrchr(fname, '.');
+	if(!dot || dot == fname)
+		ext = "";
+	else
+		ext = dot + 1;
 
-	//_splitpath(fname,NULL,NULL,NULL,ext);
-
-	//if    ((strcasecmp(ext,"bmp")==0)||(_stricmp(ext,".bmp")==0))
-	//  ReceiveVRAMBMPtoFile(x,y,w,h,depth);
-	//else
-	ReceiveVRAMtoFile(x, y, w, h, depth);
+	if (strcasecmp(ext,"bmp")==0)
+		ReceiveVRAMBMPtoFile(x,y,w,h,depth);
+	else
+		ReceiveVRAMtoFile(x, y, w, h, depth);
 
 	fclose(m_FILE);
 
@@ -3032,6 +3035,77 @@ int CCaetla::ReceiveVRAMtoFile(int x, int y, int w, int h, int depth) {
 	if ((int)fwrite(vram, 1, w * h * d, m_FILE) != (w * h * d)) {
 		free(vram);
 		complete(CAETLA_ERROR_FILE);
+	}
+
+	free(vram);
+
+	return(m_ErrorCode);
+}
+
+
+int CCaetla::ReceiveVRAMBMPtoFile(int x,int y,int w,int h,int depth)
+{
+	unsigned char	*vram;
+	int				d;
+	int				aw;
+	int				dx,dy;
+	unsigned char	line[1024*4],r,b;
+
+	BITMAPFILEHEADER	bmpfh;
+	BITMAPINFOHEADER	bmpih;
+
+// Validate region
+
+	if	(x<0)		x=0;		if	(x>1023)	x=1023;
+	if	(y<0)		y=0;		if	(y>511)		y=511;
+	if	(w<1)		w=1;		if	(h<1)		h=1;
+	if	(x+w>1024)	w=1024-x;	if	(y+h>512)	h=512-y;
+
+	depth=24;
+	d=(depth==16)?2:3;
+
+	aw=((w*3)+4-1)&(~3);
+
+	if ((vram=(unsigned char *)malloc(w*h*d))==NULL ) {
+		complete(CAETLA_ERROR_LOWRAM);
+	}
+
+	DownloadVRAM((void *)vram,x,y,w,h,depth);
+	if (m_ErrorCode!=CAETLA_ERROR_OK) {
+		free(vram);
+		complete(m_ErrorCode);
+	}
+
+	bmpfh.bfType=('M'<<8)|'B';
+	bmpfh.bfReserved1=0;
+	bmpfh.bfReserved2=0;
+	bmpfh.bfSize=(sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+(aw*h));
+	bmpfh.bfOffBits=(sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER));
+	bmpih.biSize=sizeof(BITMAPINFOHEADER);
+	bmpih.biWidth=w;
+	bmpih.biHeight=h;
+	bmpih.biPlanes=1;
+	bmpih.biBitCount=24;
+	bmpih.biCompression=0;
+	bmpih.biSizeImage=aw*h;
+	bmpih.biXPelsPerMeter=0x1ec2;
+	bmpih.biYPelsPerMeter=0x1ec2;
+	bmpih.biClrUsed=0;
+	bmpih.biClrImportant=0;
+
+	fwrite((char *)&bmpfh, 1, sizeof(BITMAPFILEHEADER), m_FILE);
+	fwrite((char *)&bmpih, 1, sizeof(BITMAPINFOHEADER), m_FILE);
+
+	for (dy=y+h-1;dy>=y;dy--) {
+		memset(&line[0],0,1024*4);
+		memcpy(&line[0],(unsigned char *)vram+(dy*w*3),w*3);
+		for (dx=0;dx<w;dx++) {
+			r=line[(dx*3)+2];
+			b=line[(dx*3)+0];
+			line[(dx*3)+0]=r;
+			line[(dx*3)+2]=b;
+		}
+		fwrite(&line[0],1,aw,m_FILE);
 	}
 
 	free(vram);

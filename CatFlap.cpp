@@ -660,6 +660,8 @@ int CmdCallback_Help(int argc, char *argv[]) {
 	        " * VRAM TRANSFER COMMANDS:\n"
 	        "   vup [filename] [x] [y] [w] [h] [depth]\tUpload file to PSX VRAM\n"
 	        "   vdown [filename] [x] [y] [w] [h] [depth]\tDownload file from PSX VRAM\n"
+			"\n"
+			"      VDOWN with a filename of \"*.BMP\" to save VRAM in BMP format.\n"
 	        "\n"
 	        " * MEMORY CARD COMMANDS:\n"
 	        "   mclist [slot]\t\t\t\tList Contents of Memory Card\n"
